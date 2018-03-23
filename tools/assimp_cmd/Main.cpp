@@ -48,6 +48,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Main.h"
 #include <assimp/SceneCombiner.h>
 #include <iostream>
+#include <fstream>
+#include "json.hpp"
+using json = nlohmann::json;
 
 const char* AICMD_MSG_ABOUT =
 "------------------------------------------------------ \n"
@@ -81,22 +84,37 @@ const char* AICMD_MSG_HELP =
 /*extern*/ Assimp::Exporter* globalExporter = NULL;
 #endif
 
+json scenario_json({
+  { "assembly",{} },
+  {"components",{}}
+  });
+
+void AddToJson(aiNode* pcNode);
 // ------------------------------------------------------------------------------
 // Application entry point
 
-//void strip_component(aiScene*, aiNode*);
-void ComputeAbsoluteTransform(aiNode* pcNode);
 int main(int argc, char* argv[]) {
+
+  if (argc < 2) {
+    printf("Invalid command\n");
+    return 0;
+  }
+
+  //get the filenames
+  std::string in_file = argv[1];
+  std::string out_json = argv[2];
+
+  //in file without file extension
+  size_t lastindex = in_file.find_last_of(".");
+  std::string in_file_noext = in_file.substr(0, lastindex);
 
   // Create an instance of the Importer class
   Importer importer;
-  const aiScene* scene_o = importer.ReadFile("Cinema4D.dae",
-    aiProcess_Triangulate );
+  const aiScene* scene_o = importer.ReadFile(in_file, aiProcess_Triangulate );
   std::cout << "Total meshes" << scene_o->mNumMeshes << "\n";
 
   aiScene* scene = new aiScene();
   SceneCombiner::CopyScene(&scene, scene_o);
-
 
   //write the mesh ply files for the scene
   for (int i = 0; i < scene_o->mNumMeshes; i++) {
@@ -104,76 +122,75 @@ int main(int argc, char* argv[]) {
     //create a new scene with one node
     aiScene* c_scene = new aiScene();
     c_scene->mMeshes = new aiMesh*[1];
-    c_scene->mMeshes[0] = scene_o->mMeshes[i];
+    c_scene->mMeshes[0] = scene_o->mMeshes[i]; //exporting the ith mesh
     c_scene->mNumMeshes = 1;
     c_scene->mMaterials = scene_o->mMaterials;
     c_scene->mNumMaterials = scene_o->mNumMaterials;
 
-    //create and populate the root node
+    //create the root node
     c_scene->mRootNode = new aiNode(scene_o->mRootNode->mName.C_Str());
     c_scene->mRootNode->mMeshes = new unsigned int[1];
-    c_scene->mRootNode->mMeshes[0] = 0;
+    c_scene->mRootNode->mMeshes[0] = 0; //index to the mesh array in scene
     c_scene->mRootNode->mNumMeshes = 1;
 
     //use exporter on the scene
     Exporter exporter;
-    exporter.Export(c_scene, "ply", "cinema" + std::to_string(i) + ".ply");
+    auto o_filename = in_file_noext + "_part_" + std::to_string(i) + ".ply";
+    exporter.Export(c_scene, "ply", o_filename);
+    //exporter.Export(c_scene, "ply", std::string(scene_o->mMeshes[i]->mName.C_Str()) + ".ply");
+
+    //write component filename and id to json
+    json component = {
+      { "file", o_filename },
+      {"id", std::string(scene_o->mMeshes[i]->mName.C_Str())}
+    };
+    scenario_json["components"].push_back(component);
   }
 
-  aiScene* c_scene = new aiScene();
-  c_scene->mMaterials = scene_o->mMaterials;
-  c_scene->mNumMaterials = scene_o->mNumMaterials;
-  c_scene->mRootNode = new aiNode(scene_o->mRootNode->mName.C_Str());
-  c_scene->mRootNode = scene_o->mRootNode->mChildren[0];
-  //c_scene->mRootNode->addChildren(1, &scene_o->mRootNode->mChildren[i]);
-  //c_scene->mRootNode->mNumMeshes = 1;
-  c_scene->mNumMeshes = 1;
-  c_scene->mMeshes = new aiMesh*[1];
-  c_scene->mMeshes[0] = scene_o->mMeshes[0];
-
-  Exporter exporter;
-  exporter.Export(scene_o, "ply", "cinema" + std::to_string(0) + ".ply");
-
+  //write out the components (mesh and applied transformation)
+  AddToJson(scene_o->mRootNode);
+  std::ofstream scenario_file(out_json, std::ios::out | std::ios::binary);
+  scenario_file << std::setprecision(std::numeric_limits<double>::max_digits10) << scenario_json;
 
   return 1;
 }
 
-void ComputeAbsoluteTransform(aiNode* pcNode)
+void AddToJson(aiNode* pcNode)
 {
+  //if the current node has a parent, compose the transformation
   if (pcNode->mParent) {
     pcNode->mTransformation = pcNode->mParent->mTransformation*pcNode->mTransformation;
   }
 
+  //if the node has some components, write out to the json
+  if (pcNode->mNumMeshes > 0) {
+    for (int i = 0; i < pcNode->mNumMeshes; i++) {
+      //the mesh idx in the scene
+      auto idx = pcNode->mMeshes[i];
+
+      //get the mesh id for idx-th mesh
+      std::string mesh_id = scenario_json["components"][idx]["id"];
+
+      //add to json
+      json component = {
+        { "component", mesh_id }
+      };
+      component["transform"] = std::vector<double>(16);
+      for (int j = 0; j < 4; j++) {
+        for (int k = 0; k < 4; k++) {
+          component["transform"][j*4 + k] = pcNode->mTransformation[j][k];
+          auto t = pcNode->mTransformation[j][k];
+        }
+      }
+      scenario_json["assembly"].push_back(component);
+    }
+  }
+
+  //recursively process the children
   for (unsigned int i = 0; i < pcNode->mNumChildren; ++i) {
-    ComputeAbsoluteTransform(pcNode->mChildren[i]);
+    AddToJson(pcNode->mChildren[i]);
   }
 }
-
-/*
-Recursively strip off and export every node from the scene
-*/
-//void strip_component(aiScene* in_scene, aiNode* in_node) {
-//
-//  //if the node has a mesh, strip off that first then proceed to children
-//  if (in_node->mNumChildren == 0)
-//  {
-//
-//    //make a copy of the node
-//    aiScene* scene_copy = new aiScene();
-//    SceneCombiner::CopyScene(&scene_copy, in_scene);
-//
-//    //make the copy a leaf node
-//    for (int i = 0; i < scene_copy-)
-//    scene_copy
-//
-//    //delete two nodes
-//    delete(scene->mRootNode->mChildren[1]);
-//    delete(scene->mRootNode->mChildren[2]);
-//    scene->mRootNode->mNumChildren = 1;
-//    scene->mNumMeshes = 1;
-//
-//  }
-//}
 
 int main2 (int argc, char* argv[])
 {
