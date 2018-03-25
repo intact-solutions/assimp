@@ -1,6 +1,6 @@
 # Open Asset Import Library (assimp)
 # ----------------------------------------------------------------------
-# 
+#
 # Copyright (c) 2006-2018, assimp team
 
 
@@ -42,6 +42,7 @@ cmake_minimum_required( VERSION 2.6 )
 INCLUDE_DIRECTORIES(
   ${Assimp_SOURCE_DIR}/include
   ${Assimp_SOURCE_DIR}/code
+  ${Assimp_SOURCE_DIR}/json/single_include/nlohmann
 )
 
 LINK_DIRECTORIES( ${Assimp_BINARY_DIR} ${Assimp_BINARY_DIR}/lib )

@@ -41,7 +41,7 @@ PROJECT( Assimp )
 # All supported options ###############################################
 OPTION( BUILD_SHARED_LIBS
   "Build package with shared libraries."
-  ON
+  OFF
 )
 OPTION( BUILD_FRAMEWORK
   "Build package as Mac OS X Framework bundle."
@@ -49,7 +49,7 @@ OPTION( BUILD_FRAMEWORK
 )
 OPTION( ASSIMP_DOUBLE_PRECISION
   "Set to ON to enable double precision processing"
-  OFF
+  ON
 )
 OPTION( ASSIMP_OPT_BUILD_PACKAGES
   "Set to ON to generate CPack configuration files and packaging targets"
@@ -77,7 +77,7 @@ OPTION ( ASSIMP_BUILD_SAMPLES
 )
 OPTION ( ASSIMP_BUILD_TESTS
   "If the test suite for Assimp is built in addition to the library."
-  ON
+  OFF
 )
 OPTION ( ASSIMP_COVERALLS
   "Enable this to measure test coverage."
