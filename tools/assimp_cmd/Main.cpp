@@ -85,9 +85,9 @@ const char* AICMD_MSG_HELP =
 #endif
 
 json scenario_json({
-  { "assembly",{} },
-  {"components",{}}
-  });
+  { "assembly", {} },
+  { "components", {} }
+});
 
 void AddToJson(aiNode* pcNode);
 // ------------------------------------------------------------------------------
@@ -108,9 +108,15 @@ int main(int argc, char* argv[]) {
   size_t lastindex = in_file.find_last_of(".");
   std::string in_file_noext = in_file.substr(0, lastindex);
 
-  // Create an instance of the Importer class
+  ImportData import_settings;
+  import_settings.ppFlags |= aiProcess_JoinIdenticalVertices;
+  import_settings.ppFlags |= aiProcess_FixInfacingNormals;
+  import_settings.ppFlags |= aiProcess_FindDegenerates;
+  import_settings.ppFlags |= aiProcess_FindInstances;
+  import_settings.ppFlags |= aiProcess_Triangulate;
+
   Importer importer;
-  const aiScene* scene_o = importer.ReadFile(in_file, aiProcess_Triangulate );
+  const aiScene* scene_o = importer.ReadFile(in_file, import_settings.ppFlags);
   std::cout << "Total components: " << scene_o->mNumMeshes << "\n";
 
   aiScene* scene = new aiScene();
