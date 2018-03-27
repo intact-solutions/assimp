@@ -196,8 +196,7 @@ void AddToJson(aiNode* pcNode)
       component["transform"] = std::vector<double>(16);
       for (int j = 0; j < 4; j++) {
         for (int k = 0; k < 4; k++) {
-          component["transform"][j*4 + k] = pcNode->mTransformation[j][k];
-          auto t = pcNode->mTransformation[j][k];
+          component["transform"][(j * 4) + k] = pcNode->mTransformation[j][k];
         }
       }
       scenario_json["assembly"].push_back(component);
