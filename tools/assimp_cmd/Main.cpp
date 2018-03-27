@@ -111,14 +111,13 @@ int main(int argc, char* argv[]) {
   // Create an instance of the Importer class
   Importer importer;
   const aiScene* scene_o = importer.ReadFile(in_file, aiProcess_Triangulate );
-  std::cout << "Total meshes" << scene_o->mNumMeshes << "\n";
+  std::cout << "Total components: " << scene_o->mNumMeshes << "\n";
 
   aiScene* scene = new aiScene();
   SceneCombiner::CopyScene(&scene, scene_o);
 
   //write the mesh ply files for the scene
   for (int i = 0; i < scene_o->mNumMeshes; i++) {
-
     //create a new scene with one node
     aiScene* c_scene = new aiScene();
     c_scene->mMeshes = new aiMesh*[1];
@@ -137,12 +136,11 @@ int main(int argc, char* argv[]) {
     Exporter exporter;
     auto o_filename = in_file_noext + "_part_" + std::to_string(i) + ".ply";
     exporter.Export(c_scene, "ply", o_filename);
-    //exporter.Export(c_scene, "ply", std::string(scene_o->mMeshes[i]->mName.C_Str()) + ".ply");
 
     //write component filename and id to json
     json component = {
       { "file", o_filename },
-      {"id", std::string(scene_o->mMeshes[i]->mName.C_Str())}
+      { "id", i }
     };
     scenario_json["components"].push_back(component);
   }
@@ -169,7 +167,7 @@ void AddToJson(aiNode* pcNode)
       auto idx = pcNode->mMeshes[i];
 
       //get the mesh id for idx-th mesh
-      std::string mesh_id = scenario_json["components"][idx]["id"];
+      int mesh_id = scenario_json["components"][idx]["id"];
 
       //add to json
       json component = {
