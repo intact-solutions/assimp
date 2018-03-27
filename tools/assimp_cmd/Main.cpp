@@ -114,8 +114,22 @@ int main(int argc, char* argv[]) {
   import_settings.ppFlags |= aiProcess_FindDegenerates;
   import_settings.ppFlags |= aiProcess_FindInstances;
   import_settings.ppFlags |= aiProcess_Triangulate;
+  import_settings.ppFlags |= aiProcess_RemoveComponent;
+  import_settings.ppFlags |= aiProcess_SortByPType;
 
   Importer importer;
+  // Only keep triangles
+  importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+  // throw away all this stuff, don't need it (and can mess up vertex identification, see: https://github.com/assimp/assimp/issues/407)
+  importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+    aiComponent_NORMALS |
+    aiComponent_TANGENTS_AND_BITANGENTS |
+    aiComponent_COLORS |
+    aiComponent_LIGHTS |
+    aiComponent_CAMERAS
+  );
+
+  DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_STDERR);
   const aiScene* scene_o = importer.ReadFile(in_file, import_settings.ppFlags);
   std::cout << "Total components: " << scene_o->mNumMeshes << "\n";
 
