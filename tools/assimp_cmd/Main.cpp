@@ -109,13 +109,11 @@ int main(int argc, char* argv[]) {
   std::string in_file_noext = in_file.substr(0, lastindex);
 
   ImportData import_settings;
-  import_settings.ppFlags |= aiProcess_JoinIdenticalVertices;
   import_settings.ppFlags |= aiProcess_FixInfacingNormals;
   import_settings.ppFlags |= aiProcess_FindDegenerates;
   import_settings.ppFlags |= aiProcess_FindInstances;
   import_settings.ppFlags |= aiProcess_Triangulate;
   import_settings.ppFlags |= aiProcess_RemoveComponent;
-  import_settings.ppFlags |= aiProcess_SortByPType;
 
   Importer importer;
   // Only keep triangles
