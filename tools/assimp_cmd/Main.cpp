@@ -132,9 +132,6 @@ int main(int argc, char* argv[]) {
   const aiScene* scene_o = importer.ReadFile(in_file, import_settings.ppFlags);
   std::cout << "Total components: " << scene_o->mNumMeshes << "\n";
 
-  aiScene* scene = new aiScene();
-  SceneCombiner::CopyScene(&scene, scene_o);
-
   //write the mesh ply files for the scene
   for (int i = 0; i < scene_o->mNumMeshes; i++) {
     //create a new scene with one node
