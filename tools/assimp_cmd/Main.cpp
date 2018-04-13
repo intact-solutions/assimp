@@ -113,6 +113,7 @@ int main(int argc, char* argv[]) {
   import_settings.ppFlags |= aiProcess_FindDegenerates;
   import_settings.ppFlags |= aiProcess_FindInstances;
   import_settings.ppFlags |= aiProcess_Triangulate;
+  import_settings.ppFlags |= aiProcess_ImproveCacheLocality;
   import_settings.ppFlags |= aiProcess_RemoveComponent;
 
   Importer importer;
