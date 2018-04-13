@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
     //use exporter on the scene
     Exporter exporter;
     auto o_filename = in_file_noext + "_part_" + std::to_string(i) + ".ply";
-    exporter.Export(c_scene, "ply", o_filename);
+    exporter.Export(c_scene, "ply", o_filename, !aiProcess_PreTransformVertices);
 
     //write component filename and id to json
     json component = {
